@@ -1,52 +1,64 @@
-
+using DevHabit.Api.Database;
+using DevHabit.Api.Extensions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
-namespace DevHabit.Api;
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-public static class Program
+// Add services to the container.
+builder.Services.AddControllers(options =>
 {
-    public static void Main(string[] args)
+    options.ReturnHttpNotAcceptable = true;
+}).AddXmlSerializerFormatters();
+
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddOpenApi();
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Database"),
+        nbgsqlOptions => nbgsqlOptions
+                .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Application))
+    .UseSnakeCaseNamingConvention();
+});
+
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName))
+    .WithTracing(tracing =>
     {
-        var builder = WebApplication.CreateBuilder(args);
-
-        // Add services to the container.
-
-        builder.Services.AddControllers();
-        // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-        builder.Services.AddOpenApi();
-        builder.Services.AddOpenTelemetry()
-            .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName))
-            .WithTracing(tracing =>
-            {
-                tracing.AddAspNetCoreInstrumentation();
-                tracing.AddHttpClientInstrumentation();
-            })
-            .WithMetrics(metrics => metrics
-            .AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation()
-                .AddRuntimeInstrumentation()
-            )
-            .UseOtlpExporter();
-        builder.Logging.AddOpenTelemetry(options =>
-        {
-           options.IncludeScopes = true;
-            options.IncludeFormattedMessage = true;
-        });
-        var app = builder.Build();
-
-        // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
-        {
-            app.MapOpenApi();
-        }
-
-        app.UseHttpsRedirection();
-
-        app.MapControllers();
-
-        app.Run();
+        tracing.AddAspNetCoreInstrumentation();
+        tracing.AddHttpClientInstrumentation();
+        tracing.AddNpgsql();
     }
+    )
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+    )
+    .UseOtlpExporter();
+
+builder.Logging.AddOpenTelemetry(options =>
+{
+    options.IncludeScopes = true;
+    options.IncludeFormattedMessage = true;
+});
+
+WebApplication app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    await app.ApplyMigrationsAsync();
 }
+
+app.UseHttpsRedirection();
+
+app.MapControllers();
+ await app.RunAsync();
