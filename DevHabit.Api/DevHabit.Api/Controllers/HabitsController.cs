@@ -9,14 +9,14 @@ namespace DevHabit.Api.Controllers;
 
 [ApiController]
 [Route("habits")]
-public sealed class HabitsController(ApplicationDbContext dbContext): ControllerBase
+public sealed class HabitsController(ApplicationDbContext dbContext) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<HabitsCollectionDto>> GetHabits()
     {
-       List<HabitDto> habits = await dbContext.Habits
-           .Select(HabitQueries.ProjectToDto())
-           .ToListAsync();
+        List<HabitDto> habits = await dbContext.Habits
+            .Select(HabitQueries.ProjectToDto())
+            .ToListAsync();
         var habitsCollectionDto = new HabitsCollectionDto
         {
             Data = habits
@@ -28,7 +28,7 @@ public sealed class HabitsController(ApplicationDbContext dbContext): Controller
     {
         HabitDto? habit = await dbContext.Habits
             .Where(h => h.Id == id)
-           .Select( HabitQueries.ProjectToDto())
+           .Select(HabitQueries.ProjectToDto())
            .FirstOrDefaultAsync();
         if (habit is null)
         {
@@ -37,7 +37,7 @@ public sealed class HabitsController(ApplicationDbContext dbContext): Controller
         return Ok(habit);
     }
 
-    
+
 
     [HttpPost]
     public async Task<ActionResult<HabitDto>> CreateHabit(CreateHabitDto createHabitDto)
@@ -53,7 +53,7 @@ public sealed class HabitsController(ApplicationDbContext dbContext): Controller
     public async Task<ActionResult> UpdateHabit(string id, UpdateHabitDto updateHabitDto)
     {
         Habit? habit = await dbContext.Habits.FirstOrDefaultAsync(h => h.Id == id);
-        if(habit is null)
+        if (habit is null)
         {
             return NotFound();
         }
@@ -65,7 +65,7 @@ public sealed class HabitsController(ApplicationDbContext dbContext): Controller
     public async Task<ActionResult> PatchHabit(string id, JsonPatchDocument<HabitDto> patchDocument)
     {
         Habit? habit = await dbContext.Habits.FirstOrDefaultAsync(h => h.Id == id);
-        if(habit is null)
+        if (habit is null)
         {
             return NotFound();
         }
@@ -80,6 +80,18 @@ public sealed class HabitsController(ApplicationDbContext dbContext): Controller
         habit.UpdatedAtUtc = DateTime.UtcNow;
         await dbContext.SaveChangesAsync();
 
+        return NoContent();
+    }
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteHabit(string id)
+    {
+        Habit? habit = await dbContext.Habits.FirstOrDefaultAsync(h => h.Id == id);
+        if(habit is null)
+        {
+            return NotFound();
+        }
+        dbContext.Habits.Remove(habit);
+        await dbContext.SaveChangesAsync();
         return NoContent();
     }
      
