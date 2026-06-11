@@ -23,7 +23,7 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Database"),
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
         nbgsqlOptions => nbgsqlOptions
                 .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Application))
     .UseSnakeCaseNamingConvention();

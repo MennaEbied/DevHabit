@@ -36,6 +36,38 @@ public static Expression<Func<Habit, HabitDto>> ProjectToDto()
         LastCompletedAtUtc = habit.LastCompletedAtUtc
     };
 }
+    public static Expression<Func<Habit, HabitWithTagsDto>> ProjectToHabitWithTagsDto()
+    {
+        return habit => new HabitWithTagsDto
+        {
+            Id = habit.Id,
+            Name = habit.Name,
+            Description = habit.Description,
+            Type = habit.Type,
+            Frequency = new FrequencyDto
+            {
+                Type = habit.Frequency.Type,
+                TimesPerPeriod = habit.Frequency.TimesPerPeriod
+            },
+            Target = new TargetDto
+            {
+                Value = habit.Target.Value,
+                Unit = habit.Target.Unit
+            },
+            Status = habit.Status,
+            IsArchived = habit.IsArchived,
+            EndDate = habit.EndDate,
+            Milestone = habit.Milestone != null ? new MilestoneDto
+            {
+                Target = habit.Milestone.Target,
+                Current = habit.Milestone.Current
+            } : null,
+            CreatedAtUtc = habit.CreatedAtUtc,
+            UpdatedAtUtc = habit.UpdatedAtUtc,
+            LastCompletedAtUtc = habit.LastCompletedAtUtc,
+            Tags = habit.Tags.Select(t => t.Name).ToArray()
+        };
+    }
 }
 internal static class HabitMappings
 {

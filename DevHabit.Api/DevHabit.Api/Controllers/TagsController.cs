@@ -16,7 +16,7 @@ public sealed class TagsController(ApplicationDbContext dbContext) : ControllerB
     public async Task<ActionResult<TagsCollectionDto>> GetTags()
     {
         List<TagDto> tags = await dbContext
-            .Tag
+            .Tags
             .Select(TagQueries.ProjectToDto())
             .ToListAsync();
         var habitsCollectionDto = new TagsCollectionDto
@@ -29,7 +29,7 @@ public sealed class TagsController(ApplicationDbContext dbContext) : ControllerB
     public async Task<ActionResult<TagDto>> GetTag(string id)
     {
         TagDto? tag = await dbContext
-            .Tag
+            .Tags
             .Where(h => h.Id == id)
             .Select(TagQueries.ProjectToDto())
             .FirstOrDefaultAsync();
@@ -43,11 +43,11 @@ public sealed class TagsController(ApplicationDbContext dbContext) : ControllerB
     public async Task<ActionResult<TagDto>> CreateTag(CreateTagDto createTagDto)
     {
         Tag tag = createTagDto.ToEntity();
-        if (await dbContext.Tag.AnyAsync(t => t.Name == tag.Name))
+        if (await dbContext.Tags.AnyAsync(t => t.Name == tag.Name))
         {
             return Conflict($"The tag '{tag.Name}' already exists");
         }
-        dbContext.Tag.Add(tag);
+        dbContext.Tags.Add(tag);
         await dbContext.SaveChangesAsync();
         TagDto tagDto = tag.ToDto();
         return CreatedAtAction(nameof(GetTag), new { id = tag.Id }, tagDto);
@@ -55,7 +55,7 @@ public sealed class TagsController(ApplicationDbContext dbContext) : ControllerB
     [HttpPut("{id}")]
     public async Task<ActionResult> UpdateTag(string id, UpdateTagDto updateTagDto)
     {
-        Tag? tag = await dbContext.Tag.FirstOrDefaultAsync(t => t.Id == id);
+        Tag? tag = await dbContext.Tags.FirstOrDefaultAsync(t => t.Id == id);
         if (tag is null)
         {
             return NotFound();
@@ -67,12 +67,12 @@ public sealed class TagsController(ApplicationDbContext dbContext) : ControllerB
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteTag(string id)
     {
-        Tag? tag = await dbContext.Tag.FirstOrDefaultAsync(t => t.Id == id);
+        Tag? tag = await dbContext.Tags.FirstOrDefaultAsync(t => t.Id == id);
         if (tag is null)
         {
             return NotFound();
         }
-        dbContext.Tag.Remove(tag);
+        dbContext.Tags.Remove(tag);
         await dbContext.SaveChangesAsync();
         return NoContent();
     }
